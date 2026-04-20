@@ -24,8 +24,11 @@ const Apply = () => {
       await saveLoanApplication({ ...formData, application_id: applicationRes.data.application_id, lender_status: applicationRes.data.status, user_id: formData.pan || 'user_123' });
       setSuccess(true);
     } catch (err) {
-      setError(`Failed to connect. Ensure the backend window is open.`);
-    } finally { setLoading(false); }
+      console.error("[!] API Error:", err);
+      setError(`Connection failed. Please RESTART your 'run_ocen_all.bat' to apply the new network settings.`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {

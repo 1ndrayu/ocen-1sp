@@ -1,39 +1,36 @@
 from fastapi import APIRouter, HTTPException
-import httpx
-from .aa import create_consent, get_consent_status, ConsentRequest
-from .lender import apply_loan, LoanApplication
-from uuid import uuid4
+from pydantic import BaseModel
+from typing import List
+import uuid
 
-router = APIRouter(prefix="/lsp", tags=["Loan Service Provider"])
+router = APIRouter(prefix="/lsp", tags=["LSP"])
+
+class ConsentRequest(BaseModel):
+    user_id: str
+    data_types: List[str]
+
+class ApplicationRequest(BaseModel):
+    business_name: str
+    pan: str
+    loan_amount: float
+    consent_id: str
 
 @router.post("/initiate-consent")
-async def initiate_consent(request: dict):
-    try:
-        # Map frontend request to our schema
-        req = ConsentRequest(
-            user_id=request.get("user_id", "user_123"),
-            data_types=request.get("data_types", ["bank_statement"])
-        )
-        return create_consent(req)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def initiate_consent(req: ConsentRequest):
+    print(f"[*] Consent initiated for user: {req.user_id}")
+    return {
+        "consent_id": f"con_{uuid.uuid4().hex[:8]}",
+        "status": "INITIATED",
+        "message": "Consent request created successfully"
+    }
 
 @router.post("/submit-application")
-async def submit_application(data: dict):
-    try:
-        application_id = str(uuid4())
-        # Prepare lender application from frontend data
-        loan_app = LoanApplication(
-            application_id=application_id,
-            borrower_name=data.get("business_name", "Anonymous"), # Simplified
-            business_name=data.get("business_name", "N/A"),
-            loan_amount=float(data.get("loan_amount", 0))
-        )
-        # Call Lender module logic
-        return apply_loan(loan_app)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/check-consent/{consent_id}")
-def check_consent(consent_id: str):
-    return get_consent_status(consent_id)
+async def submit_application(req: ApplicationRequest):
+    print(f"[*] Application submitted for: {req.business_name}")
+    # Mocking lender approval flow
+    return {
+        "application_id": f"APP-{uuid.uuid4().hex[:6].upper()}",
+        "status": "approved",
+        "lender": "Google Capital",
+        "amount": req.loan_amount
+    }
