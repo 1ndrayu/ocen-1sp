@@ -1,35 +1,29 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import aa, lender, lsp
-import uvicorn
+import os
 
-app = FastAPI(
-    title="OCEN Unified API",
-    description="Integrated AA, Lender, and LSP services",
-    version="1.0.0"
-)
+app = FastAPI(title="OCEN Unified API")
 
-# Configure CORS for the React frontend
+# Permissive CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For demo, allow all. In prod, restrict to your domain.
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include the modular routers
+@app.get("/")
+async def root():
+    return {"status": "online", "message": "OCEN Unified Backend"}
+
+# Include Routers
 app.include_router(aa.router, prefix="/api")
 app.include_router(lender.router, prefix="/api")
 app.include_router(lsp.router, prefix="/api")
 
-@app.get("/")
-def read_root():
-    return {
-        "status": "online",
-        "message": "OCEN Unified API is running",
-        "aesthetic": "Google Minimalist"
-    }
-
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Listening on 0.0.0.0 makes it reachable via any local interface
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

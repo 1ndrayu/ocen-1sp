@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { saveLoanApplication } from '../services/dbService';
 
-const LSP_API = 'http://localhost:8000/api/lsp';
+// Using relative path via Vite Proxy for maximum stability
+const LSP_API = '/api/lsp';
 
 const Apply = () => {
   const [step, setStep] = useState(1);
@@ -26,17 +27,20 @@ const Apply = () => {
     setLoading(true);
     setError(null);
     try {
+      // Step 1: Initiate Consent
       const consentRes = await axios.post(`${LSP_API}/initiate-consent`, {
         user_id: formData.pan || 'user_123',
         data_types: ['bank_statement']
       });
 
+      // Step 2: Submit Application
       const applicationRes = await axios.post(`${LSP_API}/submit-application`, {
         ...formData,
         loan_amount: parseFloat(formData.loan_amount),
         consent_id: consentRes.data.consent_id
       });
 
+      // Step 3: Save to local DB
       await saveLoanApplication({
         ...formData,
         application_id: applicationRes.data.application_id,
@@ -46,8 +50,8 @@ const Apply = () => {
 
       setSuccess(true);
     } catch (err) {
-      console.error(err);
-      setError('Connection failed. Ensure the backend is running via run_ocen_all.bat');
+      console.error("[!] API Error:", err.message);
+      setError(`Failed to connect. Please ensure the backend window is open.`);
     } finally {
       setLoading(false);
     }
