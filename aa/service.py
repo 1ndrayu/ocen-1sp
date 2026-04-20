@@ -1,117 +1,80 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
-from typing import Optional, List, Dict
+from typing import List
 import random
-import time
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="OCEN Mock Account Aggregator Service")
+app = FastAPI(title="Mock Account Aggregator Service")
+
+origins = [
+    "http://localhost:3000",  # React app's URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 # In-memory store for consents
-consents: Dict[str, Dict] = {}
+consents = {}
 
-# OCEN Data Models (mock)
 class ConsentRequest(BaseModel):
     user_id: str
-    data_types: List[str]  # e.g., ["bank_statement", "tax_returns"]
+    data_types: List[str]  # e.g., ["bank_statement"]
 
-class ConsentStatusResponse(BaseModel):
-    consent_id: str
-    status: str  # Pending, Approved, Rejected, Expired
-    message: str  # Message describing the status
-
-class BankStatement(BaseModel):
-    account_number: str
-    bank_name: str
-    transactions: List[Dict]  # Each transaction is a dictionary
-    closing_balance: float
-
-class ConsentData(BaseModel):
-    consent_id: str
-    data: Dict[str, BankStatement]  # Mapping of data type to bank statement (for simplicity)
-
-class ConsentResponse(BaseModel):
-    consent_id: str
-    status: str
-    message: str
-    data: Optional[Dict[str, BankStatement]] = None
-
-# OCEN consent request endpoint
-@app.post("/aa/consent-request", response_model=ConsentResponse)
+@app.post("/aa/consent-request")
 def create_consent(req: ConsentRequest):
     consent_id = f"consent_{uuid4().hex[:8]}"
     consents[consent_id] = {
         "user_id": req.user_id,
         "data_types": req.data_types,
-        "status": "PENDING",
-        "request_time": time.time()
+        "status": "PENDING"
     }
-    return ConsentResponse(
-        consent_id=consent_id,
-        status="PENDING",
-        message="Consent request created successfully."
-    )
+    return {"consent_id": consent_id, "status": "PENDING"}
 
-# OCEN consent status endpoint
-@app.get("/aa/consent-status/{consent_id}", response_model=ConsentStatusResponse)
+
+@app.get("/aa/consent-status/{consent_id}")
 def get_consent_status(consent_id: str):
     if consent_id not in consents:
         raise HTTPException(status_code=404, detail="Consent ID not found")
     
-    consent = consents[consent_id]
+    # Simulate consent approval after some time
+    if consents[consent_id]["status"] == "PENDING":
+        consents[consent_id]["status"] = random.choice(["APPROVED", "REJECTED"])
+    
+    return {
+        "consent_id": consent_id,
+        "status": consents[consent_id]["status"]
+    }
 
-    # Simulate consent approval after a delay or random selection
-    if consent["status"] == "PENDING" and time.time() - consent["request_time"] > 5:  # Simulate some delay
-        consent["status"] = random.choice(["APPROVED", "REJECTED"])
 
-    # Consider expired consents (e.g., after 30 minutes)
-    if time.time() - consent["request_time"] > 1800:  # 30 minutes expiration
-        consent["status"] = "EXPIRED"
-
-    return ConsentStatusResponse(
-        consent_id=consent_id,
-        status=consent["status"],
-        message="Consent status updated successfully."
-    )
-
-# OCEN data fetch endpoint (for example, bank statement)
-@app.get("/aa/fetch-data/{consent_id}", response_model=ConsentData)
+@app.get("/aa/fetch-data/{consent_id}")
 def fetch_data(consent_id: str):
     if consent_id not in consents:
         raise HTTPException(status_code=404, detail="Consent ID not found")
 
-    consent = consents[consent_id]
-
-    if consent["status"] != "APPROVED":
+    if consents[consent_id]["status"] != "APPROVED":
         raise HTTPException(status_code=403, detail="Consent not approved")
 
-    # Simulate the data fetching based on consented data types
-    fetched_data = {}
-    if "bank_statement" in consent["data_types"]:
-        fetched_data["bank_statement"] = generate_random_bank_statement()
-    
-    return ConsentData(
-        consent_id=consent_id,
-        data=fetched_data
-    )
-
-# Simulate a realistic bank statement for testing
-def generate_random_bank_statement():
-    transactions = []
-    for _ in range(random.randint(3, 6)):
-        transactions.append({
-            "date": f"2025-04-{random.randint(1, 30):02d}",
-            "description": random.choice(["Sales Revenue", "Rent Payment", "Utility Bill", "Refund"]),
-            "amount": random.randint(-5000, 30000),
-        })
-    closing_balance = sum(t["amount"] for t in transactions) + 10000  # start with an arbitrary balance
-    return BankStatement(
-        account_number=f"{random.randint(1000000000, 9999999999)}",
-        bank_name="Mock Bank",
-        transactions=transactions,
-        closing_balance=closing_balance
-    )
+    # Simulate mock bank data
+    return {
+        "consent_id": consent_id,
+        "bank_statement": {
+            "account_number": "1234567890",
+            "bank_name": "Mock Bank",
+            "transactions": [
+                {"date": "2025-04-01", "description": "Sales Revenue", "amount": 30000},
+                {"date": "2025-04-03", "description": "Rent Payment", "amount": -5000},
+                {"date": "2025-04-05", "description": "Utility Bill", "amount": -2000},
+            ],
+            "closing_balance": 23000
+        }
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("aa.service:app", host="127.0.0.1", port=7000, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=7000)

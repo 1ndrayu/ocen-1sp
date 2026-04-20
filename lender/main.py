@@ -1,55 +1,56 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import random
 from uuid import uuid4
-from typing import Optional
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Basic Lender API")
+app = FastAPI(title="Mock Lender Service")
 
-# Request Model for Loan Application
+origins = [
+    "http://localhost:3000",  # React app's URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Mock in-memory store for loans
+loans = {}
+
 class LoanApplication(BaseModel):
     borrower_name: str
     business_name: str
     loan_amount: float
     loan_purpose: str
-    pan: Optional[str] = None
-    gstin: Optional[str] = None
+    pan: str = None
+    gstin: str = None
     application_id: str
 
-# Loan Status Enum
-class LoanStatus(str):
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    PENDING = "pending"
+class LoanApplicationResponse(BaseModel):
+    application_id: str
+    lender_status: str
+    message: str
 
-# Simulate Loan Approval Logic (Basic)
-def evaluate_application(application: LoanApplication):
-    if application.loan_amount > 1000000:
-        return LoanStatus.REJECTED  # Reject loans over ₹10,00,000
-    elif application.loan_amount < 50000:
-        return LoanStatus.REJECTED  # Reject small loans below ₹50,000
-    else:
-        return LoanStatus.APPROVED  # Approve loans between ₹50,000 and ₹10,00,000
-
-# Lender Endpoint to Receive Loan Application
-@app.post("/lender/apply")
-async def apply_loan(application: LoanApplication):
-    # Evaluate the application and determine the status
-    loan_status = evaluate_application(application)
-
-    # Return Loan Status
-    return {
-        "application_id": application.application_id,
+@app.post("/lender/apply", response_model=LoanApplicationResponse)
+def apply_loan(application: LoanApplication):
+    application_id = application.application_id
+    loan_status = random.choice(["approved", "rejected"])
+    
+    loans[application_id] = {
         "status": loan_status,
-        "message": f"Loan application {loan_status}."
+        "message": "Loan Application Processed"
     }
 
-# Endpoint to Check Loan Status (for LSP to track)
-@app.get("/lender/status/{application_id}")
-async def get_loan_status(application_id: str):
-    # For now, mock a loan status retrieval
-    # Ideally, this should fetch the status from a database or another system
-    return {
-        "application_id": application_id,
-        "status": LoanStatus.PENDING,  # Assuming pending until integrated
-        "message": "Loan application is pending."
-    }
+    return LoanApplicationResponse(
+        application_id=application_id,
+        lender_status=loan_status,
+        message="Loan Application Processed"
+    )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
