@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Loader2, AlertCircle, Building2, User, Landmark, Info } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Building2, User, Landmark, Info, ArrowRight, ShieldCheck, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { saveLoanApplication } from '../services/dbService';
@@ -8,239 +8,113 @@ import { saveLoanApplication } from '../services/dbService';
 const LSP_API = 'http://localhost:8000/api/lsp';
 
 const Apply = () => {
-  const [step, setStep] = useState(1); // 1: Info, 2: Consent, 3: Success
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    business_name: '',
+    pan: '',
+    loan_amount: '',
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
-    borrower_name: '',
-    business_name: '',
-    loan_amount: '',
-    loan_purpose: '',
-    pan: '',
-    gstin: ''
-  });
-  const [result, setResult] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleApply = async (e) => {
-    e.preventDefault();
-    setStep(2); // Move to consent step
   };
 
   const handleConsent = async () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Request Consent via LSP
       const consentRes = await axios.post(`${LSP_API}/initiate-consent`, {
         user_id: formData.pan || 'user_123',
         data_types: ['bank_statement']
       });
-      
-      // 2. Submit Loan Application
+
       const applicationRes = await axios.post(`${LSP_API}/submit-application`, {
         ...formData,
         loan_amount: parseFloat(formData.loan_amount),
         consent_id: consentRes.data.consent_id
       });
 
-      // 3. Persist to Firebase
       await saveLoanApplication({
         ...formData,
         application_id: applicationRes.data.application_id,
-        lender_status: applicationRes.data.status.lender_status,
-        user_id: formData.pan // Using PAN as a simple user identifier
+        lender_status: applicationRes.data.status,
+        user_id: formData.pan || 'user_123'
       });
 
-      setResult(applicationRes.data);
-      setStep(3);
+      setSuccess(true);
     } catch (err) {
-      setError('Failed to process application. Ensure backend services are running.');
+      console.error(err);
+      setError('Connection failed. Ensure the backend is running via run_ocen_all.bat');
     } finally {
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <div className="g-container flex items-center justify-center" style={{ minHeight: '70vh' }}>
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="g-card text-center" style={{ maxWidth: 500 }}>
+          <div style={{ background: 'rgba(52, 168, 83, 0.1)', color: 'var(--g-green)', width: 80, height: 80, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <ShieldCheck size={48} />
+          </div>
+          <h2 className="mb-md">Success!</h2>
+          <p className="text-secondary mb-xl">Your application is broadcasted to the OCEN network.</p>
+          <Link to="/status" className="g-btn g-btn-primary w-full">View Dashboard</Link>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="g-container" style={{ maxWidth: 800 }}>
-      <div className="g-section">
+    <div className="g-container">
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <AnimatePresence mode="wait">
-          {step === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-            >
-              <h2 className="mb-md">Loan Application</h2>
-              <p className="text-secondary mb-md">Fill in your business details to get started with your credit application.</p>
-              
-              <form className="g-card flex flex-col gap-lg" onSubmit={handleApply}>
-                <div className="flex flex-col gap-md">
-                  <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Full Name</label>
-                  <div style={{ position: 'relative' }}>
-                    <User size={18} style={{ position: 'absolute', left: 12, top: 18, color: 'var(--g-text-disabled)' }} />
-                    <input 
-                      type="text" name="borrower_name" required className="g-input" 
-                      placeholder="e.g. John Doe" style={{ paddingLeft: 40 }}
-                      value={formData.borrower_name} onChange={handleChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-md">
-                  <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Business Name</label>
-                  <div style={{ position: 'relative' }}>
-                    <Building2 size={18} style={{ position: 'absolute', left: 12, top: 18, color: 'var(--g-text-disabled)' }} />
-                    <input 
-                      type="text" name="business_name" required className="g-input" 
-                      placeholder="e.g. Acme Corp" style={{ paddingLeft: 40 }}
-                      value={formData.business_name} onChange={handleChange}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--g-spacing-lg)' }}>
-                  <div className="flex flex-col gap-md">
-                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Loan Amount (₹)</label>
-                    <input 
-                      type="number" name="loan_amount" required className="g-input" 
-                      placeholder="e.g. 50000" value={formData.loan_amount} onChange={handleChange}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-md">
-                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>PAN Number</label>
-                    <input 
-                      type="text" name="pan" required className="g-input" 
-                      placeholder="ABCDE1234F" value={formData.pan} onChange={handleChange}
-              className="g-card"
-            >
+          {step === 1 ? (
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="g-card">
               <div className="flex items-center gap-md mb-xl">
-                <div style={{ background: 'var(--g-blue-light)', color: 'var(--g-blue)', padding: 12, borderRadius: 16 }}>
-                  <Building2 size={24} />
-                </div>
-                <div>
-                  <h2 style={{ fontWeight: 600 }}>Business Details</h2>
-                  <p className="text-secondary" style={{ fontSize: '0.85rem' }}>Step 1 of 2</p>
-                </div>
+                <div style={{ background: 'var(--g-blue-light)', color: 'var(--g-blue)', padding: 12, borderRadius: 16 }}><Building2 size={24} /></div>
+                <div><h2 style={{ fontWeight: 600 }}>Business Details</h2><p className="text-secondary" style={{ fontSize: '0.85rem' }}>Step 1 of 2</p></div>
               </div>
-
               <div className="flex flex-col gap-lg">
                 <div>
                   <label className="mb-sm block text-secondary" style={{ fontSize: '0.9rem', fontWeight: 500 }}>Entity Name</label>
-                  <input
-                    name="business_name"
-                    className="g-input"
-                    placeholder="e.g. Acme Corp"
-                    onChange={handleInputChange}
-                    value={formData.business_name}
-                  />
+                  <input name="business_name" className="g-input" placeholder="e.g. Acme Corp" onChange={handleInputChange} value={formData.business_name} />
                 </div>
                 <div>
                   <label className="mb-sm block text-secondary" style={{ fontSize: '0.9rem', fontWeight: 500 }}>Tax ID / PAN</label>
-                  <input
-                    name="pan"
-                    className="g-input"
-                    placeholder="ABCDE1234F"
-                    onChange={handleInputChange}
-                    value={formData.pan}
-                  />
+                  <input name="pan" className="g-input" placeholder="ABCDE1234F" onChange={handleInputChange} value={formData.pan} />
                 </div>
                 <div>
                   <label className="mb-sm block text-secondary" style={{ fontSize: '0.9rem', fontWeight: 500 }}>Required Amount (₹)</label>
-                  <input
-                    name="loan_amount"
-                    type="number"
-                    className="g-input"
-                    placeholder="5,00,000"
-                    onChange={handleInputChange}
-                    value={formData.loan_amount}
-                  />
+                  <input name="loan_amount" type="number" className="g-input" placeholder="5,00,000" onChange={handleInputChange} value={formData.loan_amount} />
                 </div>
-                <button 
-                  className="g-btn g-btn-primary mt-md"
-                  onClick={() => setStep(2)}
-                  disabled={!formData.business_name || !formData.pan || !formData.loan_amount}
-                >
+                <button className="g-btn g-btn-primary mt-md" onClick={() => setStep(2)} disabled={!formData.business_name || !formData.pan || !formData.loan_amount}>
                   Continue <ArrowRight size={18} />
                 </button>
               </div>
             </motion.div>
           ) : (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="g-card"
-            >
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="g-card">
               <div className="flex items-center gap-md mb-xl">
-                <div style={{ background: 'var(--g-green)', color: 'white', padding: 12, borderRadius: 16 }}>
-                  <FileCheck size={24} />
-                </div>
-                <div>
-                  <h2 style={{ fontWeight: 600 }}>Data Consent</h2>
-                  <p className="text-secondary" style={{ fontSize: '0.85rem' }}>Final Step</p>
-                </div>
+                <div style={{ background: 'var(--g-green)', color: 'white', padding: 12, borderRadius: 16 }}><FileCheck size={24} /></div>
+                <div><h2 style={{ fontWeight: 600 }}>Data Consent</h2><p className="text-secondary" style={{ fontSize: '0.85rem' }}>Final Step</p></div>
               </div>
-
               <div style={{ background: 'var(--g-blue-light)', padding: '1.5rem', borderRadius: '16px', marginBottom: '1.5rem' }}>
-                <div className="flex gap-md mb-md">
-                  <Info className="text-g-blue" size={20} />
-                  <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>To process your loan, we need to fetch your bank statements via the <strong>Account Aggregator (AA)</strong> network.</p>
-                </div>
-                <ul style={{ paddingLeft: '2.5rem', fontSize: '0.85rem' }} className="text-secondary flex flex-col gap-sm">
+                <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }} className="mb-md">Authorizing access via <strong>Account Aggregator (AA)</strong>:</p>
+                <ul style={{ paddingLeft: '1.5rem', fontSize: '0.85rem' }} className="text-secondary flex flex-col gap-sm">
                   <li>Last 6 months of bank transactions</li>
                   <li>Account balance summary</li>
                   <li>KYC Verification details</li>
                 </ul>
               </div>
-
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  style={{ background: 'rgba(234, 67, 53, 0.1)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid var(--g-red)' }}
-                  className="flex gap-sm items-center text-g-red"
-                >
-                  <AlertCircle size={18} />
-                  <span style={{ fontSize: '0.85rem' }}>{error}</span>
-                </motion.div>
-              )}
-
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="g-card"
-              style={{ textAlign: 'center', padding: 'var(--g-spacing-3xl)' }}
-            >
-              <div className="text-g-green mb-md flex justify-center">
-                <CheckCircle2 size={80} />
+              {error && <div style={{ background: 'rgba(234, 67, 53, 0.1)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', color: 'var(--g-red)', fontSize: '0.85rem' }} className="flex gap-sm items-center"><AlertCircle size={18} />{error}</div>}
+              <div className="flex gap-md">
+                <button className="g-btn g-btn-outline w-full" onClick={() => setStep(1)} disabled={loading}>Back</button>
+                <button className="g-btn g-btn-primary w-full" onClick={handleConsent} disabled={loading}>{loading ? <Loader2 className="animate-spin" size={20} /> : 'Approve & Apply'}</button>
               </div>
-              <h2 className="mb-md">Application Submitted!</h2>
-              <p className="text-secondary mb-xl">
-                Your loan application has been successfully submitted to the lender. 
-                Keep your application ID for tracking.
-              </p>
-              
-              <div className="g-card-flat mb-xl" style={{ textAlign: 'left' }}>
-                <div className="flex justify-between mb-sm">
-                  <span className="text-secondary">Application ID:</span>
-                  <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{result.application_id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-secondary">Status:</span>
-                  <span className={`text-g-${result.status.lender_status === 'approved' ? 'green' : 'red'}`} style={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                    {result.status.lender_status}
-                  </span>
-                </div>
-              </div>
-
-              <Link to="/status" className="g-btn g-btn-primary w-full">
-                Go to Dashboard
-              </Link>
             </motion.div>
           )}
         </AnimatePresence>
