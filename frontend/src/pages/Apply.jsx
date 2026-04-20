@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2, AlertCircle, Building2, User, Landmark, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { saveLoanApplication } from '../services/dbService';
 
-const LSP_API = 'https://asia-south1-ocen-dev1.cloudfunctions.net/lsp_svc';
+const LSP_API = 'http://localhost:8000/api/lsp';
 
 const Apply = () => {
   const [step, setStep] = useState(1); // 1: Info, 2: Consent, 3: Success
@@ -34,13 +35,13 @@ const Apply = () => {
     setError(null);
     try {
       // 1. Request Consent via LSP
-      const consentRes = await axios.post(`${LSP_API}/aa/consent-request`, {
+      const consentRes = await axios.post(`${LSP_API}/initiate-consent`, {
         user_id: formData.pan || 'user_123',
         data_types: ['bank_statement']
       });
       
       // 2. Submit Loan Application
-      const applicationRes = await axios.post(`${LSP_API}/loan/apply`, {
+      const applicationRes = await axios.post(`${LSP_API}/submit-application`, {
         ...formData,
         loan_amount: parseFloat(formData.loan_amount),
         consent_id: consentRes.data.consent_id
