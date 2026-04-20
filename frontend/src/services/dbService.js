@@ -1,5 +1,5 @@
-import { db } from './firebase.config';
-import { collection, addDoc, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { db } from '../firebase.config';
+import { collection, addDoc, getDocs, query, where, Timestamp, orderBy } from "firebase/firestore";
 
 /**
  * Save a new loan application to Firestore
@@ -23,7 +23,12 @@ export const saveLoanApplication = async (applicationData) => {
  */
 export const getUserApplications = async (userId) => {
   try {
-    const q = query(collection(db, "applications"), where("user_id", "==", userId));
+    let q;
+    if (userId) {
+      q = query(collection(db, "applications"), where("user_id", "==", userId), orderBy("createdAt", "desc"));
+    } else {
+      q = query(collection(db, "applications"), orderBy("createdAt", "desc"));
+    }
     const querySnapshot = await getDocs(q);
     const apps = [];
     querySnapshot.forEach((doc) => {
