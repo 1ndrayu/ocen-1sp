@@ -18,5 +18,16 @@
         "destination": "/index.html"
       }
     ]
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "venv",
+        ".venv",
+        "__pycache__"
+      ]
+    }
+  ]
 }

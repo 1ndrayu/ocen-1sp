@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2, AlertCircle, Building2, User, Landmark, Info } f
 import axios from 'axios';
 import { saveLoanApplication } from '../services/dbService';
 
-const LSP_API = 'http://localhost:9000';
+const LSP_API = 'https://asia-south1-ocen-dev1.cloudfunctions.net/lsp_svc';
 
 const Apply = () => {
   const [step, setStep] = useState(1); // 1: Info, 2: Consent, 3: Success
