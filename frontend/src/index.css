@@ -1,62 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    /* --- Colors --- */
-    --g-blue: #1a73e8;
-    --g-red: #ea4335;
-    --g-yellow: #fbbc05;
-    --g-green: #34a853;
-    
-    --g-bg-primary: #ffffff;
-    --g-bg-secondary: #f8f9fa;
-    --g-bg-tertiary: #f1f3f4;
-    
-    --g-text-primary: #202124;
-    --g-text-secondary: #5f6368;
-    --g-text-disabled: #9aa0a6;
-    
-    --g-border: #dadce0;
-    --g-border-light: #e8eaed;
-    
-    /* --- Typography --- */
-    --g-font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --g-font-display: 'Montserrat', sans-serif;
-    
-    /* --- Spacing --- */
-    --g-spacing-xs: 0.25rem;
-    --g-spacing-sm: 0.5rem;
-    --g-spacing-md: 1rem;
-    --g-spacing-lg: 1.5rem;
-    --g-spacing-xl: 2rem;
-    --g-spacing-2xl: 3rem;
-    --g-spacing-3xl: 4rem;
-    
-    /* --- Borders & Shadows --- */
-    --g-radius-sm: 8px;
-    --g-radius-md: 12px;
-    --g-radius-lg: 16px;
-    --g-radius-xl: 24px;
-    --g-radius-full: 9999px;
-    
-    --g-shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
-    --g-shadow-md: 0 4px 12px 0 rgba(60,64,67,0.30);
-    --g-shadow-lg: 0 8px 24px 0 rgba(60,64,67,0.15);
+  --g-blue: #1a73e8;
+  --g-blue-light: #e8f0fe;
+  --g-red: #ea4335;
+  --g-yellow: #fbbc04;
+  --g-green: #34a853;
+  --g-bg: #f8f9fa;
+  --g-surface: rgba(255, 255, 255, 0.7);
+  --g-text: #202124;
+  --g-text-secondary: #5f6368;
+  --g-border: rgba(218, 220, 224, 0.5);
+  --g-radius: 24px;
+  --g-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --g-glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
-/* --- Base Styles --- */
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    font-family: var(--g-font-main);
-    background-color: var(--g-bg-primary);
-    color: var(--g-text-primary);
-  font-family: 'Google Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  background: radial-gradient(circle at 0% 0%, #e8f0fe 0%, transparent 50%),
-              radial-gradient(circle at 100% 100%, #fce8e6 0%, transparent 50%),
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 0% 0%, #e8f0fe 0%, transparent 40%),
+              radial-gradient(circle at 100% 100%, #fce8e6 0%, transparent 40%),
               #f8f9fa;
   color: var(--g-text);
   min-height: 100vh;
@@ -73,9 +42,9 @@ body {
 /* Glassmorphic Card */
 .g-card {
   background: var(--g-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--g-radius);
   padding: 2.5rem;
   box-shadow: var(--g-glass-shadow);
@@ -89,8 +58,8 @@ body {
 
 .g-input {
   width: 100%;
-  padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.8);
+  padding: 1.1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
   border: 2px solid transparent;
   border-radius: 16px;
   font-size: 1rem;
@@ -108,7 +77,7 @@ body {
 .g-btn {
   padding: 1rem 2rem;
   border-radius: 100px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
@@ -132,22 +101,71 @@ body {
 }
 
 .g-btn-outline {
-  background: transparent;
+  background: white;
   border: 1px solid var(--g-border);
   color: var(--g-text);
 }
 
 .g-btn-outline:hover {
-.bg-black { background-color: #000; }
-.text-white { color: #fff; }
-.text-secondary { color: var(--g-text-secondary); }
+  background: var(--g-blue-light);
+  border-color: var(--g-blue);
+  color: var(--g-blue);
+}
 
+/* Nav */
+.g-nav {
+  position: sticky;
+  top: 1rem;
+  z-index: 1000;
+  margin: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 100px;
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--g-text-secondary);
+  font-weight: 500;
+  padding: 0.6rem 1.2rem;
+  border-radius: 100px;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--g-blue);
+  background: var(--g-blue-light);
+}
+
+/* Utils */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .items-center { align-items: center; }
+.justify-center { justify-content: center; }
 .justify-between { justify-content: space-between; }
-.gap-md { gap: var(--g-spacing-md); }
-.gap-lg { gap: var(--g-spacing-lg); }
-.mt-md { margin-top: var(--g-spacing-md); }
-.mb-md { margin-bottom: var(--g-spacing-md); }
+.gap-sm { gap: 0.5rem; }
+.gap-md { gap: 1rem; }
+.gap-lg { gap: 1.5rem; }
 .w-full { width: 100%; }
+.mb-sm { margin-bottom: 0.5rem; }
+.mb-md { margin-bottom: 1rem; }
+.mb-lg { margin-bottom: 1.5rem; }
+.mb-xl { margin-bottom: 2rem; }
+.text-secondary { color: var(--g-text-secondary); }
+.text-g-blue { color: var(--g-blue); }
+.text-g-green { color: var(--g-green); }
+.text-g-red { color: var(--g-red); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
