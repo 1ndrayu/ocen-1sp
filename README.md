@@ -1,4 +1,4 @@
-# OCEN 1SP – Loan Service Provider (LSP) MVP
+# OCEN Loan Service Provider (LSP) MVP
 
 A minimal implementation of a Loan Service Provider (LSP) aligned with the Open Credit Enablement Network (OCEN) protocol. This project demonstrates the core consent flow, data request, and loan application pipeline using a FastAPI backend.
 
